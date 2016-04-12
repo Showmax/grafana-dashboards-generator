@@ -1,0 +1,207 @@
+# POSSIBLE PROBLEMS:
+#
+# If the script is complaining about missing attributes in object like "Row",
+# check that you've inherited from a template defining all basic attributes :-)
+#
+# NOTE: expvars should be always specified in full (or: TODO: better expvars inheritance) (dtto for dashboardLinks and tags)
+# NOTE: yaml doesn't like {{ }} ... so e.g. {{exported_instance}} has to be in dquotes
+# NOTE: "Row has no collapse attribute" usualy means you've forgot to inherit basic graph_template_lines
+# NOTE: target['expr'] = target_data['expression'] % expvars
+#       TypeError: string indices must be integers, not unicode
+#       target items have to be dictionaries (e.g. "- expression: sum(..." ; you've used "- sum(...)"
+
+dashboards:
+        template:
+                instantiate: false              # do not create this dashboard it's an abstract template!
+                editable: true
+                timezone: utc
+                hideControls: false
+                style: dark
+                sharedCrosshair: true
+                refresh: 15m
+                tags: []
+                time:
+                        from: now-2d
+                        to: now
+                now: true
+                refresh_intervals:
+                        - 15s
+                        - 1m
+                        - 5m
+                        - 15m
+                        - 1h
+                        - 6h
+                        - 12h
+                        - 24h
+                        - 2d
+                        - 7d
+                        - 30d
+                time_options:
+                        - 5m
+                        - 15m
+                        - 1h
+                        - 6h
+                        - 12h
+                        - 24h
+                        - 2d
+                        - 3d
+                        - 7d
+                        - 30d
+                expvars:
+                        net_device: eth0
+        CoreOS:
+                instantiate: true       # mandatory true! otherwise it'll inherit false from template...
+                title: Core OS
+                originalTitle: Core OS
+                inherits: template
+                tags: []
+                hostgroups:
+                        - coreOsCluster
+                rows:
+                        - load1
+                        - usedMemoryExBuffersAndCache
+                        - networkReceive
+                        - networkTransmit
+                        - procs_running
+                        - diskRead
+                        - diskWrite
+                        - diskSpace
+                        - diskInodes
+                expvars:
+                        net_device: eth0
+                        filesystem: /
+hostgroups:
+        coreOsCluster:
+                type: regexp
+                regexp: coreos\d+[a-z]\.example\.com
+rows:
+        graph_template_lines:
+                # do NOT delete variables from here, generate.py assumes they exist here
+                type: graph
+                bars: false
+                collapse: false
+                datasource: null
+                editable: true
+                error: false
+                fill: 0
+                grid_leftLogBase: 1
+                grid_leftMax: null
+                grid_leftMin: null
+                grid_rightLogBase: 1
+                grid_rightMax: null
+                grid_rightMin: null
+                grid_threshold1Color: "rgba(216, 200, 27, 0.27)"
+                grid_threshold1: null
+                grid_threshold2Color: "rgba(234, 112, 112, 0.22)"
+                grid_threshold2: null
+                height: 250px
+                intervalFactor: 1
+                leftYAxisLabel: data
+                legend_alignAsTable: false
+                legend_avg: true
+                legend_current: true
+                legend_format: "{{exported_instance}}"
+                legend_max: true
+                legend_min: false
+                legend_show: true
+                legend_total: false
+                legend_values: true
+                tooltip_shared: true
+                lines: true
+                lineWidth: 1
+                nullPointMode: "null as zero"
+                percentage: false
+                pointradius: 2
+                points: false
+                renderer: png # flot == in browser, png == on server
+                rightYAxisLabel: ""
+                span: 12
+                stack: false
+                steppedLine: false
+                timeFrom: null
+                x-axis: true
+                y-axis: true
+                y_formats: [short,short]
+        load1:
+                title: load1
+                inherits: graph_template_lines
+                leftYAxisLabel: LoadAVG
+                targets:
+                        - expression: node_load1{exported_instance=~"%(instance_selector)s"}
+        procs_running:
+                title: Processes
+                inherits: graph_template_lines
+                leftYAxisLabel: "# of processes"
+                targets:
+                        - expression: node_procs_running{exported_instance=~"%(instance_selector)s"}
+        usedMemoryExBuffersAndCache:
+                title: Memory used excluding buffers and cache
+                inherits: graph_template_lines
+                leftYAxisLabel: bytes
+                y_formats: [bytes,bytes]
+                targets:
+                        - expression: node_memory_MemTotal{exported_instance=~"%(instance_selector)s"}-(node_memory_MemFree{exported_instance=~"%(instance_selector)s"}+node_memory_Cached{exported_instance=~"%(instance_selector)s"}+node_memory_Buffers{exported_instance=~"%(instance_selector)s"})
+        diskRead:
+                title: disk reads (ms)
+                inherits: graph_template_lines
+                leftYAxisLabel: ms
+                y_formats: [ms,ms]
+                targets:
+                        - expression: irate(node_disk_read_time_ms{exported_instance=~"%(instance_selector)s",device="sda"}[5m])
+        diskWrite:
+                title: disk writes (ms)
+                inherits: graph_template_lines
+                leftYAxisLabel: ms
+                y_formats: [ms,ms]
+                targets:
+                        - expression: irate(node_disk_write_time_ms{exported_instance=~"%(instance_selector)s",device="sda"}[5m])
+        diskSpace:
+                title: Filesystem free space
+                inherits: graph_template_lines
+                leftYAxisLabel: percentage
+                tooltip_shared: false
+                percentage: true
+                grid_leftMax: 100
+                grid_leftMin: 0
+                y_formats: [percent, percent]
+                fill: 0
+                legend_max: false
+                legend_min: true
+                legend_format: "{{filesystem}}"
+                targets:
+                        - expression: (node_filesystem_avail{exported_instance=~"%(instance_selector)s", filesystem=~"%(filesystem)s"} / node_filesystem_size{exported_instance=~"%(instance_selector)s", filesystem=~"%(filesystem)s"}) * 100
+        diskInodes:
+                title: Filesystem free Inodes
+                inherits: graph_template_lines
+                leftYAxisLabel: percentage
+                tooltip_shared: false
+                percentage: true
+                grid_leftMax: 100
+                y_formats: [percent, percent]
+                fill: 1
+                legend_max: false
+                legend_min: true
+                legend_format: "{{filesystem}}"
+                targets:
+                        - expression: (node_filesystem_files_free{exported_instance=~"%(instance_selector)s", filesystem=~"%(filesystem)s"} / node_filesystem_files{exported_instance=~"%(instance_selector)s", filesystem=~"%(filesystem)s"}) * 100
+        networkTransmit:
+                title: Network Transmit bps
+                inherits: graph_template_lines
+                leftYAxisLabel: bps
+                y_formats: [bps, bps]
+                targets:
+                        - expression: irate(node_network_transmit_bytes{exported_instance=~"%(instance_selector)s",device="%(net_device)s"}[5m])*8
+        networkReceive:
+                title: Network Receive bps
+                leftYAxisLabel: bps
+                inherits: graph_template_lines
+                y_formats: [bps, bps]
+                targets:
+                        - expression: irate(node_network_receive_bytes{exported_instance=~"%(instance_selector)s",device="%(net_device)s"}[5m])*8
+dashboardLinks:
+        template:
+                type: link
+                icon: external link
+                tags: []
+                targetBlank: true
+                url: http://www.showmax.com/

@@ -1,0 +1,19 @@
+# This is example Makefile for projects using grafana-dashboards-generator
+# Please check README.md for additional information
+
+all: update-submodule genconfig deploy
+
+genconfig: grafana-dashboards-generator config.yml clean dashboards
+	./grafana-dashboards-generator/generate.py -c config.yml -d dashboards
+
+dashboards:
+	@mkdir -p dashboards
+
+update-submodule:
+	git submodule update --init
+
+deploy: genconfig
+	@echo Here can be you deployment strategy
+
+clean:
+	rm -rf dashboards
