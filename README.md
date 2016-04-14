@@ -1,16 +1,16 @@
 # Grafana dasboards generator
 
-We use this project at [ShowMax](http://tech.showmax.com) to generate JSON definitions of Grafana dashboards. Main motivation for existence of this tool is to
+We use this project at [ShowMax](http://tech.showmax.com) to generate JSON definitions of Grafana dashboards. Main motivation for the existence of this tool is to
 
   * have a central place for keeping all dashboards in human readable code
   * track changes with git
   * be able to deploy dashboards to [Grafana](http://grafana.org) started in fresh container without need for persisting changes made into the container.
 
-We use awesome [Prometheus](http://www.prometheus.io) for storing our metrics.
+We use the awesome [Prometheus](http://www.prometheus.io) for storing our metrics.
 
-## Using generator
+## Using the generator
 
-We are using generator as git submodule in projects, which hold the actual configuration files. The typical configuration project contains:
+We are using the generator as a git submodule in our projects, which hold the actual configuration files. The typical configuration project contains:
 
   - ``config.yml`` with dasboards definition
   - ``Makefile`` for generating configuration and deploying generated dashboards to Grafana
@@ -25,7 +25,7 @@ Then the day-to-day use looks like:
 
 ### Preparing configuration project
 
-To start using `grafana-dashboards-generator` you should create a new git repository for holding your configuration. The process of starting a new project can look like
+To start using `grafana-dashboards-generator` you should create a new git repository for holding your configuration. The process of starting a new project would look something like
 
 ```bash
 mkdir company-awesome-dashboards && cd company-awesome-dashboards
@@ -74,4 +74,4 @@ List of things we would like to do see in the future versions:
            graph template
 ```
   * `expvars` - allow list and instantiate expression for all values
-  * better inheritance of dashboard sections - inherit all rows and change/discard just few of them, inherit all expvars and override/discard just some of them, dtto for tags
+  * better inheritance of dashboard sections - inherit all rows and change/discard just few of them, inherit all expvars and override/discard just some of them, ditto for tags
