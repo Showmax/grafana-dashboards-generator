@@ -1,4 +1,4 @@
-# Grafana dasboards generator
+# Grafana dashboards generator
 
 We use this project at [ShowMax](http://tech.showmax.com) to generate JSON definitions of Grafana dashboards. Main motivation for the existence of this tool is to
 
@@ -12,7 +12,7 @@ We use the awesome [Prometheus](http://www.prometheus.io) for storing our metric
 
 We are using the generator as a git submodule in our projects, which hold the actual configuration files. The typical configuration project contains:
 
-  - ``config.yml`` with dasboards definition
+  - ``config.yml`` with dashboards definition
   - ``Makefile`` for generating configuration and deploying generated dashboards to Grafana
 
 Then the day-to-day use looks like:
