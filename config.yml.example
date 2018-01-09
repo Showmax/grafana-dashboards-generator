@@ -218,7 +218,6 @@ templating:
                 inherits: templating_template
                 metric: node_load1
                 label: exported_instance
-hostgroups: {}
 dashboardLinks:
         template:
                 type: link
