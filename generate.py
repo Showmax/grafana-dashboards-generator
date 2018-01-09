@@ -55,8 +55,8 @@ class ConfigObject(object):
     def fill(s, attr, others):
         """fill in attribute
 
-        e.g. attr == 'hostgroups', other == all hostgroups in config file,
-        items in s.hostgroups attribute gets replaced with appropriate objects
+        e.g. attr == 'rows', other == all rows in config file,
+        items in s.rows attribute gets replaced with appropriate objects
         from others instantiating teplates on the way
         """
 
@@ -86,7 +86,6 @@ class Dashboard(ConfigObject):
     title = 'Unnamed'
     originalTitle = 'Unnamed'
 
-    hostgroups = []
     tags = []
     rows = []
     dashboardLinks = []
@@ -128,36 +127,6 @@ class Dashboard(ConfigObject):
 
         return result
 
-
-class Hostgroup(ConfigObject):
-    pass
-
-
-class HostgroupList(object):
-    """a list wrapper which can "add" regular expressions specifying
-    hostgroups
-    """
-    def __init__(s):
-        s.hg_list = []
-
-    def __getitem__(s, key):
-        return s.hg_list[key]
-
-    def __iter__(s):
-        return iter(s.hg_list)
-
-    def __len__(s):
-        return len(s.hg_list)
-
-    def append(s, *args):
-        s.hg_list.append(*args)
-
-    def extend(s, *args):
-        s.hg_list.extend(*args)
-
-    def get_regexp(s):
-        regexp = ("("+"|".join(map(lambda x: x.regexp, s.hg_list))+")")
-        return regexp
 
 
 class Row(ConfigObject):
@@ -277,11 +246,9 @@ class Row(ConfigObject):
             else:
                 target['intervalFactor'] = s.intervalFactor
             target['refId'] = chr(ord('A') + target_cnt)
-            expvars = {'instance_selector':
-                       parent_dashboard.hostgroups.get_regexp()}
-            expvars.update(parent_dashboard.expvars)
             try:
-                target['expr'] = target_data['expression'] % expvars
+                target['expr'] = target_data['expression'] % \
+                    parent_dashboard.expvars
             except KeyError:
                 print >>sys.stderr, "missing variable while trying to " \
                                     "fill expr: %s" % target_data['expression']
@@ -346,7 +313,6 @@ class DashboardLink(ConfigObject):
 
 class YamlConfigParser(object):
     dashboards = {}
-    hostgroups = {}
     graphs = {}
     rows = {}
     templating = {}
@@ -363,7 +329,6 @@ class YamlConfigParser(object):
 
         top_level_items = (
             ('dashboards', Dashboard, s.dashboards),
-            ('hostgroups', Hostgroup, s.hostgroups),
             ('rows', Row, s.rows),
             ('templating', Template, s.templating),
             ('dashboardLinks', DashboardLink, s.dashboardLinks),
@@ -382,12 +347,6 @@ class YamlConfigParser(object):
             # we receive an already "filled" instance of dashboard when
             # inherited, check for that eventuality and skip fill() in that
             # case
-            if not isinstance(s.dashboards[dash].hostgroups, HostgroupList):
-                s.dashboards[dash] = s.dashboards[dash].fill(
-                    'hostgroups', s.hostgroups)
-                hgl = HostgroupList()
-                hgl.extend(s.dashboards[dash].hostgroups)
-                s.dashboards[dash].hostgroups = hgl
             if len(s.dashboards[dash].rows) and \
                     not isinstance(s.dashboards[dash].rows[0], ConfigObject):
                 s.dashboards[dash] = s.dashboards[dash].fill('rows', s.rows)

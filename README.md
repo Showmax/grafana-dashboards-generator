@@ -53,19 +53,6 @@ And then just restart Grafana, so it reads new configuration.
 List of things we would like to do see in the future versions:
 
   * better error reporting if invalid configuration is passed
-  * discard hostgroups, something similar to
-```
-      rows: section in dashboard will be dictionary of:
-        graph_template: instance_selector_variable_name (from expvars)
-        also push it into graph title somehow...
-        hmm: mapping can enable to templatize expressions as well
-      rows:
-        - graph_template:
-            befe: backend
-        - graph_template:
-            befe: frontend
-       and expression: expression: sum(irate(haproxy_%(befe)s_bytes_out_total{exported_instance=~".*"}[5m])) by (%(befe)s)
-```
   * graph_overrides to dashboard section and maybe something similar to `seriesOverride` as well
 ```
        graph_overrides:
