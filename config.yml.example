@@ -55,8 +55,6 @@ dashboards:
                 originalTitle: Core OS
                 inherits: template
                 tags: []
-                hostgroups:
-                        - coreOsCluster
                 rows:
                         - load1
                         - usedMemoryExBuffersAndCache
@@ -70,10 +68,11 @@ dashboards:
                 expvars:
                         net_device: eth0
                         filesystem: /
-hostgroups:
-        coreOsCluster:
-                type: regexp
-                regexp: coreos\d+[a-z]\.example\.com
+                        instance_selector: ^coreos\d+[a-z]\.example\.com$
+                templating:
+                        - node_load1_exported_instance
+                templating_regexps:
+                        node_load1_exported_instance: instance_selector
 rows:
         graph_template_lines:
                 # do NOT delete variables from here, generate.py assumes they exist here
@@ -127,34 +126,34 @@ rows:
                 inherits: graph_template_lines
                 leftYAxisLabel: LoadAVG
                 targets:
-                        - expression: node_load1{exported_instance=~"%(instance_selector)s"}
+                        - expression: node_load1{exported_instance=~"$node_load1_exported_instance"}
         procs_running:
                 title: Processes
                 inherits: graph_template_lines
                 leftYAxisLabel: "# of processes"
                 targets:
-                        - expression: node_procs_running{exported_instance=~"%(instance_selector)s"}
+                        - expression: node_procs_running{exported_instance=~"$node_load1_exported_instance"}
         usedMemoryExBuffersAndCache:
                 title: Memory used excluding buffers and cache
                 inherits: graph_template_lines
                 leftYAxisLabel: bytes
                 y_formats: [bytes,bytes]
                 targets:
-                        - expression: node_memory_MemTotal{exported_instance=~"%(instance_selector)s"}-(node_memory_MemFree{exported_instance=~"%(instance_selector)s"}+node_memory_Cached{exported_instance=~"%(instance_selector)s"}+node_memory_Buffers{exported_instance=~"%(instance_selector)s"})
+                        - expression: node_memory_MemTotal{exported_instance=~"$node_load1_exported_instance"}-(node_memory_MemFree{exported_instance=~"$node_load1_exported_instance"}+node_memory_Cached{exported_instance=~"$node_load1_exported_instance"}+node_memory_Buffers{exported_instance=~"$node_load1_exported_instance"})
         diskRead:
                 title: disk reads (ms)
                 inherits: graph_template_lines
                 leftYAxisLabel: ms
                 y_formats: [ms,ms]
                 targets:
-                        - expression: irate(node_disk_read_time_ms{exported_instance=~"%(instance_selector)s",device="sda"}[5m])
+                        - expression: irate(node_disk_read_time_ms{exported_instance=~"$node_load1_exported_instance",device="sda"}[5m])
         diskWrite:
                 title: disk writes (ms)
                 inherits: graph_template_lines
                 leftYAxisLabel: ms
                 y_formats: [ms,ms]
                 targets:
-                        - expression: irate(node_disk_write_time_ms{exported_instance=~"%(instance_selector)s",device="sda"}[5m])
+                        - expression: irate(node_disk_write_time_ms{exported_instance=~"$node_load1_exported_instance",device="sda"}[5m])
         diskSpace:
                 title: Filesystem free space
                 inherits: graph_template_lines
@@ -169,7 +168,7 @@ rows:
                 legend_min: true
                 legend_format: "{{filesystem}}"
                 targets:
-                        - expression: (node_filesystem_avail{exported_instance=~"%(instance_selector)s", filesystem=~"%(filesystem)s"} / node_filesystem_size{exported_instance=~"%(instance_selector)s", filesystem=~"%(filesystem)s"}) * 100
+                        - expression: (node_filesystem_avail{exported_instance=~"$node_load1_exported_instance", filesystem=~"%(filesystem)s"} / node_filesystem_size{exported_instance=~"$node_load1_exported_instance", filesystem=~"%(filesystem)s"}) * 100
         diskInodes:
                 title: Filesystem free Inodes
                 inherits: graph_template_lines
@@ -183,21 +182,43 @@ rows:
                 legend_min: true
                 legend_format: "{{filesystem}}"
                 targets:
-                        - expression: (node_filesystem_files_free{exported_instance=~"%(instance_selector)s", filesystem=~"%(filesystem)s"} / node_filesystem_files{exported_instance=~"%(instance_selector)s", filesystem=~"%(filesystem)s"}) * 100
+                        - expression: (node_filesystem_files_free{exported_instance=~"$node_load1_exported_instance", filesystem=~"%(filesystem)s"} / node_filesystem_files{exported_instance=~"$node_load1_exported_instance", filesystem=~"%(filesystem)s"}) * 100
         networkTransmit:
                 title: Network Transmit bps
                 inherits: graph_template_lines
                 leftYAxisLabel: bps
                 y_formats: [bps, bps]
                 targets:
-                        - expression: irate(node_network_transmit_bytes{exported_instance=~"%(instance_selector)s",device="%(net_device)s"}[5m])*8
+                        - expression: irate(node_network_transmit_bytes{exported_instance=~"$node_load1_exported_instance",device="%(net_device)s"}[5m])*8
         networkReceive:
                 title: Network Receive bps
                 leftYAxisLabel: bps
                 inherits: graph_template_lines
                 y_formats: [bps, bps]
                 targets:
-                        - expression: irate(node_network_receive_bytes{exported_instance=~"%(instance_selector)s",device="%(net_device)s"}[5m])*8
+                        - expression: irate(node_network_receive_bytes{exported_instance=~"$node_load1_exported_instance",device="%(net_device)s"}[5m])*8
+templating:
+        templating_template:
+                allValue: null
+                current: {}
+                datasource: null
+                hide: 0
+                includeAll: true
+                label: null
+                multi: true
+                options: []
+                refresh: 1
+                sort: 1
+                tagValuesQuery: ""
+                tags: []
+                tagsQuery: ""
+                type: "query"
+                useTags: false
+        node_load1_exported_instance:
+                inherits: templating_template
+                metric: node_load1
+                label: exported_instance
+hostgroups: {}
 dashboardLinks:
         template:
                 type: link
