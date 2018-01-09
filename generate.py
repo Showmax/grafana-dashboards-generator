@@ -20,8 +20,9 @@ CONFIG_FILE = os.path.join(PROJ_ROOT, 'config.yml')
 class ConfigObject(object):
     inherits = None
 
-    def __init__(s, init_dict):
+    def __init__(s, name, init_dict):
         s.__dict__.update(init_dict)
+        s.name = name
 
     def __unicode__(s):
         return unicode(s.__dict__)
@@ -49,7 +50,7 @@ class ConfigObject(object):
             data.inherits = None
             return data
 
-        return s.__class__(s.__dict__)
+        return s.__class__(s.name, s.__dict__)
 
     def fill(s, attr, others):
         """fill in attribute
@@ -63,7 +64,7 @@ class ConfigObject(object):
         for a in getattr(s, attr):
             fill_list.append(others[a].converge(others))
 
-        result = s.__class__(s.__dict__)
+        result = s.__class__(s.name, s.__dict__)
         setattr(result, attr, fill_list)
 
         return result
@@ -89,6 +90,7 @@ class Dashboard(ConfigObject):
     tags = []
     rows = []
     dashboardLinks = []
+    templating = []
 
     def generate(s, context):
         """TODO: I should check, that there are no "unused" items in the config
@@ -113,7 +115,8 @@ class Dashboard(ConfigObject):
         }
 
         result['templating'] = {
-            'list': [],
+            'list': [
+                template.generate(context, s) for template in s.templating],
         }
 
         result['annotations'] = {
@@ -294,6 +297,46 @@ class Row(ConfigObject):
         return result
 
 
+class Template(ConfigObject):
+    copy_items = (
+        'datasource',
+        'allValue',
+        'current',
+        'hide',
+        'includeAll',
+        'label',
+        'multi',
+        'options',
+        'refresh',
+        'sort',
+        'tagValuesQuery',
+        'tags',
+        'tagsQuery',
+        'type',
+        'useTags',
+    )
+
+    def generate(s, context, parent_dashboard):
+        result = super(Template, s).generate(context)
+
+        # Set template name and query.
+        result['name'] = s.name
+        result['query'] = 'label_values(%s, %s)' % (s.metric, s.label)
+
+        # This allows restricting values of the template by a regexp.
+        #
+        # When `templating_regexps` dict is defined on a dashboard and contains
+        # a key with the same name as the name of the template, use a regexp
+        # defined as an expvar with the same name as the value of the key.
+        # This allows overriding the regexp per dashboard.
+        if hasattr(parent_dashboard, 'templating_regexps') and \
+                s.name in parent_dashboard.templating_regexps:
+            result['regex'] = parent_dashboard.expvars[
+                parent_dashboard.templating_regexps[s.name]]
+
+        return result
+
+
 class DashboardLink(ConfigObject):
     copy_items = ('icon', 'tags', 'targetBlank', 'type', 'url', 'title')
 
@@ -306,6 +349,7 @@ class YamlConfigParser(object):
     hostgroups = {}
     graphs = {}
     rows = {}
+    templating = {}
     dashboardLinks = {}
 
     def __init__(s, config_file='./config.yml'):
@@ -321,12 +365,13 @@ class YamlConfigParser(object):
             ('dashboards', Dashboard, s.dashboards),
             ('hostgroups', Hostgroup, s.hostgroups),
             ('rows', Row, s.rows),
+            ('templating', Template, s.templating),
             ('dashboardLinks', DashboardLink, s.dashboardLinks),
         )
 
         for name, class_, store in top_level_items:
             for item in s.yaml[name]:
-                store[item] = class_(s.yaml[name][item])
+                store[item] = class_(item, s.yaml[name][item])
 
         for dash in s.dashboards:
             # FIXME: not nice
@@ -346,6 +391,10 @@ class YamlConfigParser(object):
             if len(s.dashboards[dash].rows) and \
                     not isinstance(s.dashboards[dash].rows[0], ConfigObject):
                 s.dashboards[dash] = s.dashboards[dash].fill('rows', s.rows)
+            if len(s.dashboards[dash].templating) and \
+                    not isinstance(s.dashboards[dash].templating[0], Template):
+                s.dashboards[dash] = s.dashboards[dash].fill(
+                    'templating', s.templating)
             if len(s.dashboards[dash].dashboardLinks) and \
                     not isinstance(
                         s.dashboards[dash].dashboardLinks[0],
