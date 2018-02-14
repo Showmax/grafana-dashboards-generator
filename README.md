@@ -52,7 +52,7 @@ And then just restart Grafana, so it reads new configuration.
 
 List of things we would like to do see in the future versions:
 
-  * better error reporting if invalid configuration is passed
+  * error reporting if invalid configuration is passed, stack traces are useless
   * graph_overrides to dashboard section and maybe something similar to `seriesOverride` as well
 ```
        graph_overrides:
