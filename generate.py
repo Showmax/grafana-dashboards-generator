@@ -75,12 +75,29 @@ class ConfigObject(object):
         for i in s.copy_items:
             result[i] = getattr(s, i)
 
+        if hasattr(s, 'optional_copy_items'):
+            for i in s.optional_copy_items:
+                try:
+                    result[i] = getattr(s, i)
+                except AttributeError:
+                    continue
+
         return result
 
 
 class Dashboard(ConfigObject):
-    copy_items = ('title', 'originalTitle', 'tags', 'style', 'timezone',
-                  'editable', 'hideControls', 'sharedCrosshair', 'refresh')
+    copy_items = (
+        'editable',
+        'hideControls',
+        'originalTitle',
+        'refresh',
+        'sharedCrosshair',
+        'style',
+        'tags',
+        'timezone',
+        'title',
+    )
+    optional_copy_items = ('folder',)
 
     instantiate = True
     title = 'Unnamed'
@@ -126,7 +143,6 @@ class Dashboard(ConfigObject):
         result['version'] = 22
 
         return result
-
 
 
 class Row(ConfigObject):
@@ -369,10 +385,12 @@ class DashboardGenerator(object):
     def __iter__(s):
         for dash_name, dash in s.ycp.dashboards.iteritems():
             if dash.instantiate:
-                yield dash_name, s.gen_dashboard(dash)
+                yield [dash_name] + s.gen_dashboard(dash)
 
     def gen_dashboard(s, d):
-        return json.dumps(d.generate(s.ycp.dashboards))
+        dash_dict = d.generate(s.ycp.dashboards)
+        dash_folder = dash_dict.pop('folder', 'no_folder')  # default folder
+        return [dash_folder, json.dumps(dash_dict)]
 
 
 def parse_args():
@@ -406,20 +424,26 @@ def main():
     dg = DashboardGenerator(ycp)
 
     if not args.noop:
-        logging.debug("writing %s/index" % args.dest_dir)
-        index_f = open("%s/index" % (args.dest_dir), 'w')
+        logging.debug('writing %s' % os.path.join(args.dest_dir, 'index'))
+        index_f = open(os.path.join(args.dest_dir, 'index'), 'w')
     else:
-        logging.debug("would be writing %s/index" % args.dest_dir)
+        logging.debug('would be writing %s' %
+                      os.path.join(args.dest_dir, 'index'))
 
-    for dashboard_name, dashboard in dg:
-        out_fn = "%s/%s.json" % (args.dest_dir, dashboard_name)
+    for dashboard_name, dashboard_folder, dashboard in dg:
+        out_fn = os.path.join(args.dest_dir,
+                              dashboard_folder,
+                              '%s.json' % dashboard_name)
         if args.noop:
-            logging.debug("would be writing %s" % out_fn)
+            logging.debug('would be writing %s' % out_fn)
         else:
-            logging.debug("writing %s" % out_fn)
+            logging.debug('writing %s' % out_fn)
+            if dashboard_folder and not os.path.exists(os.path.dirname(out_fn)):
+                os.makedirs(os.path.dirname(out_fn))
             with open(out_fn, 'w') as f:
                 print >>f, dashboard
-                print >>index_f, "%s.json" % dashboard_name
+                print >>index_f, os.path.join(dashboard_folder,
+                                              '%s.json' % dashboard_name)
 
 
 if __name__ == '__main__':
