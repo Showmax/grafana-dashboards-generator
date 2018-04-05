@@ -385,12 +385,15 @@ class DashboardGenerator(object):
     def __iter__(s):
         for dash_name, dash in s.ycp.dashboards.iteritems():
             if dash.instantiate:
-                yield [dash_name] + s.gen_dashboard(dash)
+                if hasattr(dash, 'folder'):
+                    folder = dash.folder
+                    delattr(dash, 'folder')
+                else:
+                    folder = 'no_folder'  # default folder
+                yield dash_name, folder, s.gen_dashboard(dash)
 
     def gen_dashboard(s, d):
-        dash_dict = d.generate(s.ycp.dashboards)
-        dash_folder = dash_dict.pop('folder', 'no_folder')  # default folder
-        return [dash_folder, json.dumps(dash_dict)]
+        return json.dumps(d.generate(s.ycp.dashboards))
 
 
 def parse_args():
@@ -444,6 +447,8 @@ def main():
                 print >>f, dashboard
                 print >>index_f, os.path.join(dashboard_folder,
                                               '%s.json' % dashboard_name)
+    if not args.noop:
+        index_f.close()
 
 
 if __name__ == '__main__':
