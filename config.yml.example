@@ -49,6 +49,7 @@ dashboards:
                         - 30d
                 expvars:
                         net_device: eth0
+                folder: General
         CoreOS:
                 instantiate: true       # mandatory true! otherwise it'll inherit false from template...
                 title: Core OS
