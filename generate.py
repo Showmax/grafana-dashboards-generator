@@ -316,6 +316,9 @@ class Template(ConfigObject):
                 s.name in parent_dashboard.templating_regexps:
             result['regex'] = parent_dashboard.expvars[
                 parent_dashboard.templating_regexps[s.name]]
+            result['allValue'] = parent_dashboard.expvars[
+                parent_dashboard.templating_regexps
+                [s.name]].replace('\\', '\\\\')
 
         return result
 
