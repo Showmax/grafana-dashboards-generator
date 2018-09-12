@@ -1,6 +1,6 @@
 # Grafana dashboards generator
 
-We use this project at [ShowMax](http://tech.showmax.com) to generate JSON definitions of Grafana dashboards. Main motivation for the existence of this tool is to
+We use this project at [Showmax](http://tech.showmax.com) to generate JSON definitions of Grafana dashboards. Main motivation for the existence of this tool is to
 
   * have a central place for keeping all dashboards in human readable code
   * track changes with git
