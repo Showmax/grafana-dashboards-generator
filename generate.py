@@ -313,6 +313,12 @@ class Template(ConfigObject):
         # defined as an expvar with the same name as the value of the key.
         # This allows overriding the regexp per dashboard.
         if hasattr(parent_dashboard, 'templating_regexps') and \
+                isinstance(parent_dashboard.templating_regexps, list):
+            print("ERROR: templating_regexps must be dict and is list in "
+                  "template %s used in dashboard %s (remove dashes?)" %
+                  (s.name, parent_dashboard.name))
+            sys.exit(1)
+        if hasattr(parent_dashboard, 'templating_regexps') and \
                 s.name in parent_dashboard.templating_regexps:
             result['regex'] = parent_dashboard.expvars[
                 parent_dashboard.templating_regexps[s.name]]
